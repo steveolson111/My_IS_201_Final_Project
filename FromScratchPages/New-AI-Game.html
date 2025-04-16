@@ -18,7 +18,8 @@
             min-height: 100vh;
             background-color: #add8e6;
             font-family: 'Press Start 2P', cursive;
-            overflow: hidden;
+            overflow-y: auto; /* allows vertical scrolling */
+            overflow-x: hidden; /* still blocks horizontal scrolling if desired */
             color: #333;
             transition: background-color 0.5s ease, color 0.5s ease;
         }
