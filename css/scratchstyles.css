@@ -1,0 +1,47 @@
+body {
+    background-color: rgb(180, 251, 253);
+}
+.my_background_color{
+    background-color: rgb(180, 251, 253) !important;
+}
+
+.my_text_color{
+    color: rgb(9, 38, 172) !important;
+}
+
+.my_footer{
+    padding-left: 50px;
+}
+h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    color: rgb(9, 38, 172) !important;
+}
+h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: rgb(9, 38, 172) !important;
+}
+h3{
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: rgb(172, 9, 172) !important;
+}
+.header1 {
+    background-color: lightgray;
+    padding: 10px;
+    text-align: center;
+}
+
+.content1 {
+    background-color: white;
+    padding: 10px;
+    margin: 2px;
+}
+
+.footer1 {
+    background-color: lightgray;
+    padding: 10px;
+    text-align: center;
+}

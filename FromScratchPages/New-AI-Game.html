@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Football Runner Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="../assets/css/gamestyles.css">
+    <style>
+        /* --- (all your previous styles unchanged) --- */
+        body {
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #add8e6;
+            font-family: 'Press Start 2P', cursive;
+            overflow: hidden;
+            color: #333;
+            transition: background-color 0.5s ease, color 0.5s ease;
+        }
+        #mainTitle {
+            font-size: 2.5em;
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            transition: color 0.5s ease;
+        }
+        .game-container {
+            border: 3px solid #333;
+            background-color: #f7f7f7;
+            position: relative;
+            overflow: hidden;
+            width: 600px;
+            max-width: 95%;
+            height: 200px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.5s ease, border-color 0.5s ease;
+        }
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background-color: #77dd77;
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 16px;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            z-index: 5;
+        }
+        #message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 18px;
+            color: #e63946;
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.85);
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+            z-index: 10;
+            transition: color 0.5s ease, background-color 0.5s ease;
+        }
+        #restartButton {
+            margin-top: 15px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-family: 'Press Start 2P', cursive;
+            color: white;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: background-color 0.3s ease;
+        }
+        #restartButton:hover {
+            background-color: #45a049;
+        }
+        .links-container {
+            margin-top: 30px;
+            text-align: center;
+        }
+        .links-container a {
+            font-size: 1em;
+            color: #333;
+            text-decoration: none;
+            margin: 0 15px;
+            transition: color 0.5s ease;
+        }
+        .links-container a:hover {
+            text-decoration: underline;
+        }
+        body.inverted {
+            background-color: #333;
+            color: #f7f7f7;
+        }
+        body.inverted #mainTitle {
+            color: #f7f7f7;
+        }
+        body.inverted .game-container {
+            background-color: #ddd;
+            border-color: #f7f7f7;
+        }
+        body.inverted #gameCanvas {
+            background-color: #444;
+        }
+        body.inverted #score {
+            color: #333;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.5);
+        }
+        body.inverted #message {
+            color: #f7f7f7;
+            background-color: rgba(50, 50, 50, 0.85);
+        }
+        body.inverted .links-container a {
+            color: #f7f7f7;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="mainTitle">This is my football game! Can you make it to 10 where it gets super spicy?</h1>
+    <div class="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div id="score">Score: 0</div>
+        <div id="message">
+            Press SPACE or Tap to Start<br>
+            <button id="restartButton" style="display: none;">Restart</button>
+        </div>
+    </div><Br><Br>
+    <div class="links-container">
+        <a href="../index1.html">Resume Page</a>
+        <a href="FromScratch.html">From Scratch Page</a>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+        const messageDisplay = document.getElementById('message');
+        const bodyElement = document.body;
+        const mainTitle = document.getElementById('mainTitle');
+
+        let player;
+        let gravity = 0.6;
+        let obstacles = [];
+        let gameSpeed = 5;
+        let score = 0;
+        let gameOver = true;
+        let frameCount = 0;
+        let initialSpawnTimer = 200;
+        let spawnTimer = initialSpawnTimer;
+        let isInverted = false;
+        let lastScoreMultiple = 0;
+
+        const PLAYER_WIDTH = 30;
+        const PLAYER_HEIGHT = 50;
+        const PLAYER_X_POS = 50;
+        const GROUND_Y_OFFSET = 5;
+        let GROUND_Y_POS;
+
+        const OBSTACLE_PLAYER_WIDTH = 35;
+        const OBSTACLE_PLAYER_HEIGHT = 48;
+
+        const normalColors = {
+            ground_line: '#fff',
+            playerColor: '#0077cc',
+            obstaclePlayerColor: '#cc3300',
+            football: '#8B4513'
+        };
+        const invertedColors = {
+            ground_line: '#aaa',
+            playerColor: '#99ccee',
+            obstaclePlayerColor: '#ee9977',
+            football: '#d2b48c'
+        };
+
+        class Player {
+            constructor(x, y, w, h) {
+                this.x = x;
+                this.y = y;
+                this.w = w;
+                this.h = h;
+                this.dy = 0;
+                this.jumpForce = 14;
+                this.grounded = true;
+            }
+
+            draw() {
+                const colors = isInverted ? invertedColors : normalColors;
+                ctx.fillStyle = colors.playerColor;
+
+                // Head
+                ctx.beginPath();
+                ctx.arc(this.x + this.w / 2, this.y + 7, 7, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Body
+                ctx.fillRect(this.x + 5, this.y + 14, this.w - 10, this.h - 25);
+
+                // Legs
+                ctx.fillRect(this.x + 5, this.y + this.h - 11, 8, 11);
+                ctx.fillRect(this.x + this.w - 13, this.y + this.h - 15, 8, 15);
+
+                // Arms
+                ctx.fillRect(this.x, this.y + 18, 5, 10); // Back arm
+                ctx.fillRect(this.x + this.w - 5, this.y + 18, 5, 10); // Front arm
+
+                // Football in front hand
+                ctx.fillStyle = colors.football;
+                ctx.beginPath();
+                ctx.ellipse(this.x + this.w - 3, this.y + 22, 4, 6, Math.PI / 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            update() {
+                if (this.y + this.h < GROUND_Y_POS || this.dy < 0) {
+                    this.dy += gravity;
+                    this.grounded = false;
+                } else {
+                    this.dy = 0;
+                    this.grounded = true;
+                    this.y = GROUND_Y_POS - this.h;
+                }
+                this.y += this.dy;
+                if (this.y + this.h > GROUND_Y_POS) {
+                    this.y = GROUND_Y_POS - this.h;
+                    this.dy = 0;
+                    this.grounded = true;
+                }
+                this.draw();
+            }
+
+            jump() {
+                if (this.grounded) {
+                    this.dy = -this.jumpForce;
+                    this.grounded = false;
+                }
+            }
+        }
+
+        class Obstacle {
+            constructor(w, h) {
+                this.w = w;
+                this.h = h;
+                this.x = canvas.width;
+                this.y = GROUND_Y_POS - this.h;
+            }
+
+            draw() {
+                const colors = isInverted ? invertedColors : normalColors;
+                ctx.fillStyle = colors.obstaclePlayerColor;
+
+                ctx.beginPath();
+                ctx.arc(this.x + this.w / 2, this.y + 7, 7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillRect(this.x + 3, this.y + 14, this.w - 6, this.h - 20);
+                ctx.fillRect(this.x + 5, this.y + this.h - 6, 10, 6);
+                ctx.fillRect(this.x + this.w - 15, this.y + this.h - 6, 10, 6);
+                ctx.fillRect(this.x, this.y + 18, 5, 12);
+                ctx.fillRect(this.x + this.w - 5, this.y + 18, 5, 12);
+            }
+
+            update() {
+                this.x -= gameSpeed;
+                this.draw();
+            }
+        }
+
+        function spawnObstacle() {
+            obstacles.push(new Obstacle(OBSTACLE_PLAYER_WIDTH, OBSTACLE_PLAYER_HEIGHT));
+        }
+
+        function applyColorMode() {
+            if (isInverted) {
+                bodyElement.classList.add('inverted');
+                mainTitle.textContent = "Good luck, don't get trucked!";
+                canvas.style.backgroundColor = '#444';
+            } else {
+                bodyElement.classList.remove('inverted');
+                mainTitle.textContent = "You've got this!";
+                canvas.style.backgroundColor = '#77dd77';
+            }
+        }
+
+        function startGame() {
+            gameOver = false;
+            score = 0;
+            lastScoreMultiple = 0;
+            isInverted = false;
+            applyColorMode();
+            gameSpeed = 5;
+            obstacles = [];
+            frameCount = 0;
+            spawnTimer = initialSpawnTimer;
+            player = new Player(PLAYER_X_POS, GROUND_Y_POS - PLAYER_HEIGHT, PLAYER_WIDTH, PLAYER_HEIGHT);
+            scoreDisplay.textContent = `Score: ${score}`;
+            messageDisplay.style.display = 'none';
+            messageDisplay.querySelector('#restartButton').style.display = 'none';
+            gameLoop();
+        }
+
+        function endGame() {
+            gameOver = true;
+            messageDisplay.innerHTML = `Game Over!<br>Score: ${score}<br><button id="restartButton">Restart</button>`;
+            messageDisplay.style.display = 'block';
+            document.getElementById('restartButton').onclick = startGame;
+        }
+
+        function checkCollision(rect1, rect2) {
+            const buffer = 3;
+            return (
+                rect1.x + buffer < rect2.x + rect2.w - buffer &&
+                rect1.x + rect1.w - buffer > rect2.x + buffer &&
+                rect1.y + buffer < rect2.y + rect2.h - buffer &&
+                rect1.y + rect1.h - buffer > rect2.y + buffer
+            );
+        }
+
+        function gameLoop() {
+            if (gameOver) {
+                if (score === 0 && obstacles.length === 0) {
+                    messageDisplay.style.display = 'block';
+                    messageDisplay.querySelector('#restartButton').style.display = 'none';
+                }
+                return;
+            }
+
+            requestAnimationFrame(gameLoop);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const colors = isInverted ? invertedColors : normalColors;
+            ctx.fillStyle = colors.ground_line;
+            ctx.fillRect(0, GROUND_Y_POS, canvas.width, 2);
+
+            player.update();
+
+            frameCount++;
+            if (frameCount > spawnTimer) {
+                spawnObstacle();
+                frameCount = 0;
+                spawnTimer = Math.random() * (canvas.width / gameSpeed * 0.7) + (canvas.width / gameSpeed * 0.6);
+                spawnTimer = Math.max(spawnTimer, 70);
+            }
+
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const o = obstacles[i];
+                o.update();
+                if (checkCollision(player, o)) {
+                    endGame();
+                    return;
+                }
+                if (o.x + o.w < 0) {
+                    obstacles.splice(i, 1);
+                    score++;
+                    scoreDisplay.textContent = `Score: ${score}`;
+
+                    const currentScoreMultiple = Math.floor(score / 10);
+                    if (score > 0 && currentScoreMultiple > lastScoreMultiple) {
+                        isInverted = !isInverted;
+                        applyColorMode();
+                        lastScoreMultiple = currentScoreMultiple;
+                    }
+                    if (score % 5 === 0 && score > 0) {
+                        gameSpeed += 0.25;
+                    }
+                }
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (gameOver) {
+                    const btn = messageDisplay.querySelector('#restartButton');
+                    if (btn && btn.style.display !== 'none') {
+                        btn.click();
+                    } else {
+                        startGame();
+                    }
+                } else {
+                    player.jump();
+                }
+            }
+        });
+
+        window.onload = () => {
+            canvas.width = document.querySelector('.game-container').clientWidth;
+            canvas.height = document.querySelector('.game-container').clientHeight;
+            GROUND_Y_POS = canvas.height - GROUND_Y_OFFSET;
+            messageDisplay.style.display = 'block';
+        };
+    </script>
+    <br>
+    <br>
+    <Br>
+    <footer class="footer">
+        <p>&copy; 2025 My Portfolio. All rights reserved.</p>
+    </footer>
+</body>
+</html>

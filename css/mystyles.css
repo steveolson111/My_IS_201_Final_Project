@@ -1,0 +1,15 @@
+.body {
+    font-family: "Times New Roman", Times, serif;
+    background-color: #ffffff !important;
+}
+.my_background_color{
+    background-color: rgb(9, 38, 172) !important;
+}
+
+.my_text_color{
+    color: rgb(9, 38, 172) !important;
+}
+
+.my_footer{
+    padding-left: 50px;
+}
