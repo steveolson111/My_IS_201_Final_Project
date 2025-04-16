@@ -392,6 +392,20 @@
                 }
             }
         });
+        document.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          if (gameOver) {
+            const btn = messageDisplay.querySelector('#restartButton');
+            if (btn && btn.style.display !== 'none') {
+              btn.click();
+            } else {
+              startGame();
+            }
+          } else {
+            player.jump();
+          }
+        }, { passive: false });
+
 
         window.onload = () => {
             canvas.width = document.querySelector('.game-container').clientWidth;
